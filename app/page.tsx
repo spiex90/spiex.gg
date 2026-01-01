@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { SITE } from "./lib/site";
+import StreamCountdown from "./components/StreamCountdown";
 
 type LiveApiResponse = {
   live: boolean;
@@ -14,16 +15,11 @@ type LiveApiResponse = {
 };
 
 function getKuwaitNow() {
-  // Kuwait is UTC+3. Using Intl keeps it consistent for "soon" logic.
-  return new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Kuwait" })
-  );
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kuwait" }));
 }
 
 function minutesUntilNextStream(now: Date) {
-  // Uses SITE.schedule pattern: Mon/Wed/Fri — 7:00 PM (Kuwait)
-  // We'll hardcode the schedule days + time to avoid parsing text.
-  const streamDays = new Set([1, 3, 5]); // Mon=1, Wed=3, Fri=5 (JS: Sun=0)
+  const streamDays = new Set([1, 3, 5]); // Mon, Wed, Fri
   const targetHour = 19; // 7:00 PM
   const targetMin = 0;
 
@@ -37,7 +33,6 @@ function minutesUntilNextStream(now: Date) {
     if (streamDays.has(dow)) {
       const t = new Date(d);
       t.setHours(targetHour, targetMin, 0, 0);
-      // if today and time already passed, skip (unless add > 0)
       if (t.getTime() >= now.getTime()) candidates.push(t);
     }
   }
@@ -64,7 +59,7 @@ export default function Home() {
     }
 
     load();
-    const id = setInterval(load, 60_000); // refresh every 60s
+    const id = setInterval(load, 60_000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -75,13 +70,11 @@ export default function Home() {
 
   const soonMins = useMemo(() => {
     if (isLive) return null;
-    const now = getKuwaitNow();
-    return minutesUntilNextStream(now);
+    return minutesUntilNextStream(getKuwaitNow());
   }, [isLive]);
 
   const goingLiveSoon = !isLive && soonMins !== null && soonMins <= 30;
 
-  // Border/glow style depending on state
   const statusBoxClass = [
     "mt-4 rounded-2xl border px-4 py-3 text-sm transition",
     isLive
@@ -93,10 +86,8 @@ export default function Home() {
 
   return (
     <>
-      {/* HERO / ABOUT */}
       <header className="mb-10">
         <div className="flex items-center gap-3">
-          {/* LOGO */}
           <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-white/10 bg-black">
             <Image
               src="/images/logo.png"
@@ -116,7 +107,6 @@ export default function Home() {
         </div>
 
         <div className="mt-7 grid gap-6 sm:grid-cols-[160px,1fr] sm:items-center">
-          {/* BIGGER PHOTO */}
           <div className="relative h-40 w-40 overflow-hidden rounded-3xl border border-white/10 bg-white/5">
             <Image
               src="/images/spiex.png"
@@ -127,7 +117,6 @@ export default function Home() {
             />
           </div>
 
-          {/* SEO ABOUT TEXT + CTA */}
           <div>
             <h2 className="text-xl font-semibold">
               Kuwait-based Twitch Partner & Variety Gamer
@@ -144,18 +133,17 @@ export default function Home() {
               This is my official hub for Twitch and Discord.
             </p>
 
-            {/* Arabic About */}
             <p className="mt-4 text-sm leading-7 text-white/70" dir="rtl">
               أنا <span className="text-white font-semibold">(سبايكس) فواز</span>،
               ستريمر تويتش رسمي من الكويت.
               أقدّم بثوث متنوعة مليئة بالطاقة وتفاعل قوي مع المجتمع،
               وألعاب تشمل الأكشن، التحديات، واللعب الجماعي.
-              <br /><br />
+              <br />
+              <br />
               هذا الموقع هو المكان الرسمي لكل شيء يخص البث المباشر والديسكورد
               — تجربة تجمع اللاعبين والمجتمع في مكان واحد.
             </p>
 
-            {/* ✅ BUTTONS NEXT TO EACH OTHER */}
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <a
                 href={SITE.urls.live}
@@ -190,7 +178,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* ✅ LIVE / OFFLINE / GOING LIVE SOON + SCHEDULE (Border + Glow + Arabic line) */}
+            {/* STATUS BOX */}
             <div className={statusBoxClass}>
               {status === null ? (
                 <span className="text-white/50">Checking stream status…</span>
@@ -222,36 +210,33 @@ export default function Home() {
                       <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
                       GOING LIVE SOON
                     </span>
+
                     <span className="text-white/80">
-                      Stream starts in <span className="font-semibold text-white">{soonMins}</span>{" "}
-                      min — <span className="font-semibold text-white">{SITE.schedule}</span>
-                    </span>
-                  </div>
-
-                  {/* Arabic schedule line */}
-                  <div className="text-xs text-white/60" dir="rtl">
-                    البث: <span className="text-white">الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-                      <span className="h-2 w-2 rounded-full bg-white/40" />
-                      OFFLINE
-                    </span>
-
-                    <span className="text-white/70">
-                      Next streams:{" "}
+                      Stream starts in{" "}
+                      <span className="font-semibold text-white">{soonMins}</span> min —{" "}
                       <span className="font-semibold text-white">{SITE.schedule}</span>
                     </span>
                   </div>
 
-                  {/* Arabic schedule line */}
                   <div className="text-xs text-white/60" dir="rtl">
-                    البث: <span className="text-white">الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)</span>
+                    البث:{" "}
+                    <span className="text-white">
+                      الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)
+                    </span>
                   </div>
                 </div>
+              ) : (
+                <>
+                  {/* ✅ OFFLINE = SHOW COUNTDOWN */}
+                  <StreamCountdown className="mt-1" />
+
+                  <div className="mt-2 text-xs text-white/60" dir="rtl">
+                    البث:{" "}
+                    <span className="text-white">
+                      الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)
+                    </span>
+                  </div>
+                </>
               )}
             </div>
           </div>
