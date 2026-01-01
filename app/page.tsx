@@ -234,12 +234,7 @@ export default function Home() {
   scheduleText="الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)"
 />
 
-<div className="mt-2 text-xs text-white/60" dir="rtl">
-  البث:{" "}
-  <span className="text-white">
-    الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)
-  </span>
-</div>
+
                 </>
               )}
             </div>
