@@ -227,15 +227,19 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  {/* ✅ OFFLINE = SHOW COUNTDOWN */}
-                  <StreamCountdown className="mt-1" />
+             {/* ✅ OFFLINE = SHOW COUNTDOWN */}
+<StreamCountdown
+  isLive={isLive}
+  className="mt-1"
+  scheduleText="الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)"
+/>
 
-                  <div className="mt-2 text-xs text-white/60" dir="rtl">
-                    البث:{" "}
-                    <span className="text-white">
-                      الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)
-                    </span>
-                  </div>
+<div className="mt-2 text-xs text-white/60" dir="rtl">
+  البث:{" "}
+  <span className="text-white">
+    الإثنين / الأربعاء / الجمعة — 7:00 مساءً (الكويت)
+  </span>
+</div>
                 </>
               )}
             </div>
