@@ -2,103 +2,100 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const KUWAIT_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC+3 (no DST)
-const STREAM_DAYS = new Set([1, 3, 5]); // Mon=1, Wed=3, Fri=5 (Sun=0)
+type Props = {
+  isLive: boolean;
+  scheduleText?: string;
+};
+
+const KUWAIT_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC+3
+const STREAM_DAYS = new Set([1, 3, 5]); // Mon/Wed/Fri (in Kuwait)
 const STREAM_HOUR = 19; // 7:00 PM
 const STREAM_MIN = 0;
 
-type NextStreamInfo = {
-  nextUtcMs: number;
-  label: string;
-};
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
+function nowKuwaitMs() {
+  // "Kuwait time" represented in a UTC-based ms value by shifting UTC now by +3h
+  return Date.now() + KUWAIT_OFFSET_MS;
 }
 
-// Build "Kuwait time" by shifting UTC and reading it via UTC getters (stable on all PCs)
-function getNextStreamUtcMs(nowUtcMs: number): NextStreamInfo | null {
-  const nowKuwaitPseudoMs = nowUtcMs + KUWAIT_OFFSET_MS;
-  const nowKuwait = new Date(nowKuwaitPseudoMs);
+function getNextStreamKuwaitMs(nowKwMs: number) {
+  // Work in "Kuwait-ms space" and use UTC getters so local machine timezone never matters
+  const now = new Date(nowKwMs);
+  const startDay = now.getUTCDate();
 
-  let bestUtcMs: number | null = null;
-  let bestLabel = "";
+  for (let add = 0; add <= 7; add++) {
+    const d = new Date(nowKwMs);
+    d.setUTCDate(startDay + add);
 
-  for (let addDays = 0; addDays <= 7; addDays++) {
-    const d = new Date(nowKuwaitPseudoMs + addDays * 24 * 60 * 60 * 1000);
-
-    const dow = d.getUTCDay(); // day in Kuwait pseudo-time
+    const dow = d.getUTCDay();
     if (!STREAM_DAYS.has(dow)) continue;
 
-    const y = d.getUTCFullYear();
-    const m = d.getUTCMonth();
-    const day = d.getUTCDate();
+    const t = new Date(d);
+    t.setUTCHours(STREAM_HOUR, STREAM_MIN, 0, 0);
 
-    // Candidate time in Kuwait pseudo-time:
-    const candidateKuwaitPseudoMs = Date.UTC(y, m, day, STREAM_HOUR, STREAM_MIN, 0);
-
-    // Convert Kuwait pseudo-time back to real UTC time:
-    const candidateUtcMs = candidateKuwaitPseudoMs - KUWAIT_OFFSET_MS;
-
-    if (candidateUtcMs >= nowUtcMs && (bestUtcMs === null || candidateUtcMs < bestUtcMs)) {
-      bestUtcMs = candidateUtcMs;
-
-      const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      bestLabel = `${weekdayNames[dow]} 7:00 PM (Kuwait)`;
-    }
+    if (t.getTime() > nowKwMs) return t.getTime();
+    if (t.getTime() === nowKwMs) return t.getTime();
   }
 
-  if (bestUtcMs === null) return null;
-  return { nextUtcMs: bestUtcMs, label: bestLabel };
+  // fallback (shouldn't happen)
+  const f = new Date(nowKwMs);
+  f.setUTCDate(f.getUTCDate() + 1);
+  f.setUTCHours(STREAM_HOUR, STREAM_MIN, 0, 0);
+  return f.getTime();
 }
 
-function formatHMS(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+function formatHMS(totalSeconds: number) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
 }
 
-export default function StreamCountdown({ isLive }: { isLive: boolean }) {
-  const [nowUtcMs, setNowUtcMs] = useState(() => Date.now());
+function formatNextLabel(nextKwMs: number) {
+  const d = new Date(nextKwMs);
+  const dow = WEEKDAYS[d.getUTCDay()];
+  // Always 7:00 PM Kuwait, but keep it explicit:
+  return `${dow} 7:00 PM`;
+}
+
+export default function StreamCountdown({ isLive, scheduleText }: Props) {
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setNowUtcMs(Date.now()), 1000);
+    if (isLive) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [isLive]);
 
-  const next = useMemo(() => getNextStreamUtcMs(nowUtcMs), [nowUtcMs]);
+  const { nextLabel, secondsLeft, goingLiveSoon } = useMemo(() => {
+    const nowMs = nowKuwaitMs();
+    const nextMs = getNextStreamKuwaitMs(nowMs);
+    const diffSec = Math.ceil((nextMs - nowMs) / 1000);
 
-  if (isLive) {
-    return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm shadow-[0_0_60px_rgba(239,68,68,0.18)]">
-        <div className="flex items-center justify-between">
-          <span className="text-white/80">You are live now</span>
-          <span className="inline-flex items-center gap-2 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-300">
-            <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
-            LIVE
-          </span>
-        </div>
-      </div>
-    );
-  }
+    return {
+      nextLabel: formatNextLabel(nextMs),
+      secondsLeft: diffSec,
+      goingLiveSoon: diffSec > 0 && diffSec <= 30 * 60, // 30 min
+    };
+  }, [tick, isLive]);
 
-  if (!next) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-        <div className="text-white/60">Countdown unavailable</div>
-      </div>
-    );
-  }
+  if (isLive) return null;
 
-  const remainingMs = next.nextUtcMs - nowUtcMs;
+  const boxClass = [
+    "mt-4 rounded-2xl border p-4 transition",
+    goingLiveSoon
+      ? "border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.18)]"
+      : "border-white/10 bg-white/5",
+  ].join(" ");
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-[0_0_60px_rgba(255,255,255,0.05)]">
+    <div className={boxClass}>
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-semibold text-white/85">
-          Next stream: {next.label}
+        <div className="text-sm text-white/80">
+          <span className="font-semibold text-white">Next stream:</span>{" "}
+          {nextLabel} <span className="text-white/50">(Kuwait)</span>
         </div>
 
         <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
@@ -107,14 +104,22 @@ export default function StreamCountdown({ isLive }: { isLive: boolean }) {
         </span>
       </div>
 
-      <div className="mt-2 flex items-baseline gap-3">
-        <span className="text-sm text-white/60">Starts in</span>
-        <span className="text-3xl font-extrabold tracking-tight text-white">
-          {formatHMS(remainingMs)}
-        </span>
-      </div>
+      <div className="mt-2 flex items-end justify-between gap-3">
+        <div>
+          <div className="text-xs text-white/50">
+            {goingLiveSoon ? "Going live soon" : "Starts in"}
+          </div>
+          <div className="mt-1 text-3xl font-extrabold tracking-tight">
+            {formatHMS(secondsLeft)}
+          </div>
+        </div>
 
-      
+        {scheduleText ? (
+          <div className="text-xs text-white/60" dir="rtl">
+            {scheduleText}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
