@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type Props = {
   isLive: boolean;
   scheduleText?: string;
+  className?: string;
 };
 
 const KUWAIT_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC+3
@@ -84,11 +85,13 @@ export default function StreamCountdown({ isLive, scheduleText }: Props) {
   if (isLive) return null;
 
   const boxClass = [
-    "mt-4 rounded-2xl border p-4 transition",
-    goingLiveSoon
-      ? "border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.18)]"
-      : "border-white/10 bg-white/5",
-  ].join(" ");
+  "rounded-2xl border p-4 transition",
+  goingLiveSoon
+    ? "border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.18)]"
+    : "border-white/10 bg-white/5",
+  className ?? "",
+].join(" ");
+
 
   return (
     <div className={boxClass}>
