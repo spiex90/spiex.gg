@@ -2,150 +2,119 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Countdown = {
-  target: Date;
-  label: string; // e.g. "Mon 7:00 PM (Kuwait)"
-  ms: number;
+const KUWAIT_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC+3 (no DST)
+const STREAM_DAYS = new Set([1, 3, 5]); // Mon=1, Wed=3, Fri=5 (Sun=0)
+const STREAM_HOUR = 19; // 7:00 PM
+const STREAM_MIN = 0;
+
+type NextStreamInfo = {
+  nextUtcMs: number;
+  label: string;
 };
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-// Kuwait is UTC+3. We’ll calculate the next stream time based on Kuwait local time,
-// then convert it to a real Date() in the user's browser.
-function getNextStreamKuwait(): Countdown {
-  const now = new Date();
+// Build "Kuwait time" by shifting UTC and reading it via UTC getters (stable on all PCs)
+function getNextStreamUtcMs(nowUtcMs: number): NextStreamInfo | null {
+  const nowKuwaitPseudoMs = nowUtcMs + KUWAIT_OFFSET_MS;
+  const nowKuwait = new Date(nowKuwaitPseudoMs);
 
-  // Convert "now" to Kuwait time fields using Intl
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Kuwait",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
+  let bestUtcMs: number | null = null;
+  let bestLabel = "";
 
-  const parts = fmt.formatToParts(now);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value;
+  for (let addDays = 0; addDays <= 7; addDays++) {
+    const d = new Date(nowKuwaitPseudoMs + addDays * 24 * 60 * 60 * 1000);
 
-  const year = Number(get("year"));
-  const month = Number(get("month")); // 1-12
-  const day = Number(get("day"));     // 1-31
-  const hour = Number(get("hour"));
-  const minute = Number(get("minute"));
-  const second = Number(get("second"));
-  const weekday = get("weekday") ?? ""; // "Mon" etc
+    const dow = d.getUTCDay(); // day in Kuwait pseudo-time
+    if (!STREAM_DAYS.has(dow)) continue;
 
-  // Map weekday short -> 0..6 (Sun..Sat)
-  const wMap: Record<string, number> = {
-    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
-  };
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth();
+    const day = d.getUTCDate();
 
-  // Current Kuwait weekday number
-  const kuwaitWeekday = wMap[weekday] ?? 0;
+    // Candidate time in Kuwait pseudo-time:
+    const candidateKuwaitPseudoMs = Date.UTC(y, m, day, STREAM_HOUR, STREAM_MIN, 0);
 
-  // Streams: Mon(1), Wed(3), Fri(5) at 19:00
-  const streamDays = [1, 3, 5];
-  const streamHour = 19;
-  const streamMinute = 0;
+    // Convert Kuwait pseudo-time back to real UTC time:
+    const candidateUtcMs = candidateKuwaitPseudoMs - KUWAIT_OFFSET_MS;
 
-  // Helper: build a Date in Kuwait timezone by using UTC math.
-  // Kuwait is UTC+3, so "Kuwait 19:00" == UTC 16:00.
-  const kuwaitToUTCDate = (y: number, m: number, d: number, h: number, min: number) => {
-    // Create UTC date for Kuwait local time minus 3 hours
-    return new Date(Date.UTC(y, m - 1, d, h - 3, min, 0));
-  };
+    if (candidateUtcMs >= nowUtcMs && (bestUtcMs === null || candidateUtcMs < bestUtcMs)) {
+      bestUtcMs = candidateUtcMs;
 
-  // Determine how many days until next stream day/time
-  const nowMinutes = hour * 60 + minute;
-  const streamMinutes = streamHour * 60 + streamMinute;
-
-  let bestDeltaDays: number | null = null;
-
-  for (const sd of streamDays) {
-    let delta = sd - kuwaitWeekday;
-    if (delta < 0) delta += 7;
-
-    // If it's the same day, but time already passed, push to next week
-    if (delta === 0 && nowMinutes >= streamMinutes) delta = 7;
-
-    if (bestDeltaDays === null || delta < bestDeltaDays) bestDeltaDays = delta;
+      const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      bestLabel = `${weekdayNames[dow]} 7:00 PM (Kuwait)`;
+    }
   }
 
-  const deltaDays = bestDeltaDays ?? 0;
-
-  // Kuwait date (year/month/day) + deltaDays at 19:00 Kuwait
-  // We can safely add deltaDays using a UTC date base at Kuwait midnight.
-  const baseUTC = kuwaitToUTCDate(year, month, day, 0, 0); // Kuwait 00:00 -> UTC previous day 21:00
-  const targetUTC = new Date(baseUTC.getTime() + deltaDays * 24 * 60 * 60 * 1000);
-  // Set target to Kuwait 19:00 (UTC 16:00)
-  targetUTC.setUTCHours(16, 0, 0, 0);
-
-  // Label it nicely
-  const labelFmt = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Kuwait",
-    weekday: "short",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const label = `${labelFmt.format(targetUTC)} (Kuwait)`;
-
-  return { target: targetUTC, label, ms: targetUTC.getTime() - now.getTime() };
+  if (bestUtcMs === null) return null;
+  return { nextUtcMs: bestUtcMs, label: bestLabel };
 }
 
-export default function StreamCountdown({ className }: { className?: string }) {
-  const [now, setNow] = useState(() => Date.now());
+function formatHMS(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+export default function StreamCountdown({ isLive }: { isLive: boolean }) {
+  const [nowUtcMs, setNowUtcMs] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNowUtcMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const next = useMemo(() => getNextStreamKuwait(), [now]);
+  const next = useMemo(() => getNextStreamUtcMs(nowUtcMs), [nowUtcMs]);
 
-  const ms = Math.max(0, next.ms);
-  const totalSeconds = Math.floor(ms / 1000);
-
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
-
-  return (
-    <div
-      className={[
-        "rounded-2xl border border-white/10 bg-white/5 px-4 py-3",
-        "shadow-[0_0_30px_rgba(0,0,0,0.35)]",
-        className ?? "",
-      ].join(" ")}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs font-semibold text-white/70">
-          Next stream: <span className="text-white/90">{next.label}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-semibold text-white/80">
-            <span className="h-2 w-2 rounded-full bg-white/40" />
-            OFFLINE
+  if (isLive) {
+    return (
+      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm shadow-[0_0_60px_rgba(239,68,68,0.18)]">
+        <div className="flex items-center justify-between">
+          <span className="text-white/80">You are live now</span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-300">
+            <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+            LIVE
           </span>
         </div>
       </div>
+    );
+  }
 
-      <div className="mt-2 flex flex-wrap items-baseline gap-2">
-        <div className="text-sm text-white/60">Starts in</div>
-        <div className="text-2xl font-extrabold tracking-tight">
-          {days > 0 ? `${days}d ` : ""}
-          {pad(hours)}:{pad(mins)}:{pad(secs)}
-        </div>
+  if (!next) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+        <div className="text-white/60">Countdown unavailable</div>
       </div>
+    );
+  }
+
+  const remainingMs = next.nextUtcMs - nowUtcMs;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-[0_0_60px_rgba(255,255,255,0.05)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-white/85">
+          Next stream: {next.label}
+        </div>
+
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+          <span className="h-2 w-2 rounded-full bg-white/40" />
+          OFFLINE
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-baseline gap-3">
+        <span className="text-sm text-white/60">Starts in</span>
+        <span className="text-3xl font-extrabold tracking-tight text-white">
+          {formatHMS(remainingMs)}
+        </span>
+      </div>
+
+      
     </div>
   );
 }
