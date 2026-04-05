@@ -1,14 +1,18 @@
+import { ReactNode } from "react";
+
 export default function SectionCard({
   title,
   children,
 }: {
-  title: string;
-  children: React.ReactNode;
+  title?: string;
+  children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-3">{children}</div>
+    <section className="glass-card gradient-border p-5 sm:p-6">
+      {title && (
+        <h2 className="text-lg font-bold mb-4">{title}</h2>
+      )}
+      <div>{children}</div>
     </section>
   );
 }

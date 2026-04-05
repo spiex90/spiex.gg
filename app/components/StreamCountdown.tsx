@@ -13,15 +13,13 @@ function getKuwaitNow() {
 }
 
 function getNextStreamDate(now: Date) {
-  // Mon/Wed/Fri at 7:00 PM Kuwait time
-  const streamDays = new Set([1, 3, 5]); // Mon=1, Wed=3, Fri=5
+  const streamDays = new Set([1, 3, 5]);
   const targetHour = 19;
   const targetMin = 0;
 
   for (let add = 0; add <= 7; add++) {
     const d = new Date(now);
     d.setDate(now.getDate() + add);
-
     if (streamDays.has(d.getDay())) {
       const t = new Date(d);
       t.setHours(targetHour, targetMin, 0, 0);
@@ -35,11 +33,7 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-export default function StreamCountdown({
-  isLive,
-  scheduleText,
-  className,
-}: Props) {
+export default function StreamCountdown({ isLive, scheduleText, className }: Props) {
   const [now, setNow] = useState<Date>(() => getKuwaitNow());
 
   useEffect(() => {
@@ -67,41 +61,53 @@ export default function StreamCountdown({
       })
     : "Next stream";
 
-  const boxClass = [
-    "rounded-2xl border px-4 py-3 text-sm transition",
-    isLive
-      ? "border-red-500/30 bg-red-500/10 shadow-[0_0_60px_rgba(239,68,68,0.25)]"
-      : goingLiveSoon
-      ? "border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.18)]"
-      : "border-white/10 bg-white/5",
-    className ?? "",
-  ].join(" ");
-
   return (
-    <div className={boxClass}>
+    <div className={className}>
       <div className="flex items-center justify-between gap-3">
-        <div className="text-white/80">
-          <span className="font-semibold text-white">Next stream:</span>{" "}
+        <div className="text-white/70 text-sm">
+          <span className="font-bold text-white">Next stream:</span>{" "}
           {nextLabel} (Kuwait)
         </div>
 
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-          <span className="h-2 w-2 rounded-full bg-white/40" />
+        <span
+          className={[
+            "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ring-1",
+            goingLiveSoon
+              ? "bg-emerald-500/15 text-emerald-200 ring-emerald-500/20"
+              : isLive
+              ? "bg-red-500/15 text-red-200 ring-red-500/20"
+              : "bg-white/[0.06] text-white/50 ring-white/10",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "h-2 w-2 rounded-full",
+              goingLiveSoon
+                ? "bg-emerald-300 live-dot"
+                : isLive
+                ? "bg-red-400 live-dot"
+                : "bg-white/30",
+            ].join(" ")}
+          />
           {isLive ? "LIVE" : "OFFLINE"}
         </span>
       </div>
 
       {!isLive && nextStream && (
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <div className="text-white/60">Starts in</div>
-          <div className="font-mono text-2xl font-bold tracking-wider text-white">
-            {pad(hh)}:{pad(mm)}:{pad(ss)}
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div className="text-xs text-white/40 uppercase tracking-wider">Starts in</div>
+          <div className="font-mono text-3xl font-black tracking-wider text-white">
+            <span className="text-red-500">{pad(hh)}</span>
+            <span className="text-white/20 mx-0.5">:</span>
+            <span className="text-white">{pad(mm)}</span>
+            <span className="text-white/20 mx-0.5">:</span>
+            <span className="text-red-400">{pad(ss)}</span>
           </div>
         </div>
       )}
 
       {scheduleText && (
-        <div className="mt-2 text-xs text-white/60" dir="rtl">
+        <div className="mt-3 text-xs text-white/40" dir="rtl">
           {scheduleText}
         </div>
       )}

@@ -29,70 +29,67 @@ export default function LiveWidget() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 90_000); // every 90s
+    const id = setInterval(load, 90_000);
     return () => clearInterval(id);
   }, []);
 
   const isLive = data.live === true;
 
   return (
-    <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+    <div className={[
+      "glass-card gradient-border p-5 transition-all duration-500",
+      isLive ? "shadow-[0_0_60px_rgba(239,68,68,0.12)]" : "",
+    ].join(" ")}>
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
             <span
               className={[
-                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
+                "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold ring-1",
                 isLive
-                  ? "bg-red-500/15 text-red-200 ring-1 ring-red-500/30"
-                  : "bg-white/10 text-white/70 ring-1 ring-white/10",
+                  ? "bg-red-500/15 text-red-200 ring-red-500/20"
+                  : "bg-white/[0.06] text-white/50 ring-white/10",
               ].join(" ")}
             >
               <span
                 className={[
                   "h-2 w-2 rounded-full",
-                  isLive ? "bg-red-400 animate-pulseGlow" : "bg-white/40",
+                  isLive ? "bg-red-400 live-dot" : "bg-white/30",
                 ].join(" ")}
               />
-              {loading ? "CHECKING…" : isLive ? "LIVE NOW" : "OFFLINE"}
+              {loading ? "CHECKING..." : isLive ? "LIVE NOW" : "OFFLINE"}
             </span>
 
             {isLive && typeof data.viewers === "number" && (
-              <span className="text-xs text-white/60">{data.viewers} watching</span>
+              <span className="text-xs text-white/50">{data.viewers.toLocaleString()} watching</span>
             )}
           </div>
 
-          <h3 className="mt-3 text-lg font-semibold text-white">
+          <h3 className="mt-3 text-lg font-bold text-white">
             {isLive ? "Spiex is live on Twitch" : "Next streams"}
           </h3>
 
-          <p className="mt-1 text-sm text-white/70">
+          <p className="mt-1 text-sm text-white/60">
             {isLive
               ? `${data.game ? `${data.game} · ` : ""}${data.title ?? "Live now"}`
               : "Mon / Wed / Fri — 7:00 PM (Kuwait) · Join Discord for alerts"}
           </p>
-
-          {!isLive && data.error && (
-            <p className="mt-2 text-xs text-white/40">(Live check note: {data.error})</p>
-          )}
         </div>
 
         <div className="flex flex-col gap-2 shrink-0">
           <a
             href="https://live.spiex.gg"
-            className={[
-              "rounded-xl px-4 py-2 text-sm font-semibold text-center",
-              isLive
-                ? "bg-red-500 text-white shadow-[0_0_40px_rgba(239,68,68,0.25)] hover:bg-red-500/90"
-                : "bg-white/10 text-white hover:bg-white/15",
-            ].join(" ")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={isLive ? "btn-primary text-xs py-2 px-4" : "btn-secondary text-xs py-2 px-4"}
           >
-            {isLive ? "WATCH LIVE" : "GO TO TWITCH"}
+            {isLive ? "WATCH" : "TWITCH"}
           </a>
-
           <a
             href="https://discord.spiex.gg"
-            className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-center text-white hover:bg-white/15"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary text-xs py-2 px-4"
           >
             DISCORD
           </a>

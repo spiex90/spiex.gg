@@ -12,11 +12,8 @@ export const SITE = {
     instagram: "https://instagram.com/spiex90",
     twitter: "https://x.com/spiex90",
 
-    // ✅ FIX: put your real YouTube channel link here
-    // Example formats:
-    // "https://www.youtube.com/@spiex90"
-    // or "https://www.youtube.com/channel/CHANNEL_ID"
     youtube: "https://www.youtube.com/@spiex90",
+    tiktok: "https://www.tiktok.com/@spiex90",
   },
 };
 
@@ -24,10 +21,8 @@ export const SITE = {
 export const LINKS = [
   { label: "🔴 WATCH LIVE", href: "/live", primary: true, external: false },
   { label: "💬 DISCORD", href: "/discord", external: false },
-  // ✅ FIX: Minecraft should go to your site page, not play.spiex.gg
-  { label: "🎮 MINECRAFT (THE HUB)", href: "/play", external: false },
-
   { label: "📸 INSTAGRAM", href: SITE.urls.instagram, external: true },
   { label: "𝕏 TWITTER", href: SITE.urls.twitter, external: true },
   { label: "🎥 YOUTUBE", href: SITE.urls.youtube, external: true },
+  { label: "🎵 TIKTOK", href: SITE.urls.tiktok, external: true },
 ];

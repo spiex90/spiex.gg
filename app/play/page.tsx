@@ -12,30 +12,33 @@ type McStatus = {
   error?: string;
 };
 
-function CopyRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+    <div className="glass-card flex items-center justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-white/60">{label}</div>
-        <div className="truncate text-sm font-semibold text-white">{value}</div>
+        <div className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">{label}</div>
+        <div className="truncate text-sm font-bold text-white mt-0.5">{value}</div>
       </div>
       <button
         onClick={copy}
-        className="shrink-0 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/15"
+        className={[
+          "shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-300",
+          copied
+            ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30"
+            : "bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white",
+        ].join(" ")}
       >
-        Copy
+        {copied ? "Copied!" : "Copy"}
       </button>
     </div>
   );
@@ -46,7 +49,6 @@ export default function PlayPage() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       try {
         const res = await fetch("/api/minecraft/status", { cache: "no-store" });
@@ -56,13 +58,9 @@ export default function PlayPage() {
         if (!cancelled) setData({ online: false, host: "play.spiex.gg", port: 25606, error: "status_unavailable" });
       }
     }
-
     load();
     const id = setInterval(load, 60_000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   const online = data?.online === true;
@@ -74,117 +72,117 @@ export default function PlayPage() {
   const bedrockPort = "25606";
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-extrabold tracking-tight">Minecraft — The HUB</h1>
-        <p className="mt-2 text-sm text-white/70">
+    <div className="space-y-8 pt-4">
+      {/* Header */}
+      <header className="text-center">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+          Minecraft — <span className="gradient-text">The HUB</span>
+        </h1>
+        <p className="mt-3 text-sm text-white/50">
           Join the official SPIEX community server. Java & Bedrock supported.
         </p>
       </header>
 
-      {/* STATUS CARD */}
+      {/* Status Card */}
       <div
         className={[
-          "rounded-2xl border px-4 py-4",
-          online
-            ? "border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.18)]"
-            : "border-white/10 bg-white/5",
+          "glass-card gradient-border p-5 transition-all duration-500",
+          online ? "shadow-[0_0_60px_rgba(16,185,129,0.12)]" : "",
         ].join(" ")}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span
               className={[
-                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
-                online ? "bg-emerald-500/15 text-emerald-200" : "bg-white/10 text-white/70",
+                "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold ring-1",
+                online
+                  ? "bg-emerald-500/15 text-emerald-200 ring-emerald-500/20"
+                  : "bg-white/[0.06] text-white/50 ring-white/10",
               ].join(" ")}
             >
-              <span
-                className={[
-                  "h-2 w-2 rounded-full",
-                  online ? "bg-emerald-300 animate-pulse" : "bg-white/40",
-                ].join(" ")}
-              />
-              {online ? "ONLINE" : "OFFLINE"}
+              <span className={[
+                "h-2 w-2 rounded-full",
+                online ? "bg-emerald-300 live-dot" : "bg-white/30",
+              ].join(" ")} />
+              {data === null ? "CHECKING..." : online ? "ONLINE" : "OFFLINE"}
             </span>
 
-            {online && (
-              <span className="text-xs text-white/70">
-                {typeof playersOnline === "number" ? (
-                  <>
-                    Players: <span className="font-semibold text-white">{playersOnline}</span>
-                    {typeof playersMax === "number" ? ` / ${playersMax}` : ""}
-                  </>
-                ) : (
-                  "Server is up."
-                )}
+            {online && typeof playersOnline === "number" && (
+              <span className="text-xs text-white/50">
+                <span className="font-bold text-white">{playersOnline}</span>
+                {typeof playersMax === "number" ? ` / ${playersMax}` : ""} players
               </span>
             )}
           </div>
 
-          <div className="text-xs text-white/60">
-            {data?.version ? (
-              <>
-                Version: <span className="text-white/80">{data.version}</span>
-              </>
-            ) : (
-              <span className="text-white/40">Status updates every 60s</span>
-            )}
-          </div>
+          {data?.version && (
+            <span className="text-xs text-white/40">
+              v<span className="text-white/60">{data.version}</span>
+            </span>
+          )}
         </div>
 
         {data?.motd?.clean?.[0] && (
-          <div className="mt-3 text-sm text-white/70">
-            <span className="text-white/50">MOTD:</span>{" "}
-            <span className="text-white/80">{data.motd.clean.join(" ")}</span>
+          <div className="mt-3 text-sm text-white/60">
+            <span className="text-white/30">MOTD:</span>{" "}
+            <span className="text-white/70">{data.motd.clean.join(" ")}</span>
           </div>
         )}
       </div>
 
-      {/* COPY CARDS */}
+      {/* Copy Cards */}
       <div className="grid gap-3">
         <CopyRow label="Java Address" value={javaAddress} />
         <CopyRow label="Bedrock Address" value={bedrockAddress} />
         <CopyRow label="Bedrock Port" value={bedrockPort} />
       </div>
 
-      {/* HOW TO JOIN */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-        <h2 className="text-lg font-bold">How to Join</h2>
+      {/* How to Join */}
+      <div className="glass-card p-5 sm:p-6">
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-400">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          How to Join
+        </h2>
 
-        <div className="mt-3 space-y-4 text-sm text-white/70">
+        <div className="mt-5 space-y-6 text-sm text-white/60">
           <div>
-            <div className="font-semibold text-white">Java (PC)</div>
-            <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>Open Minecraft → <span className="text-white">Multiplayer</span></li>
-              <li>Click <span className="text-white">Add Server</span></li>
-              <li>
-                Server Address: <span className="text-white font-semibold">{javaAddress}</span>
-                <span className="text-white/60"> (if needed: :{bedrockPort})</span>
-              </li>
-              <li>Click <span className="text-white">Done</span> → Join</li>
+            <div className="font-bold text-white flex items-center gap-2">
+              <span className="h-6 w-6 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/70">PC</span>
+              Java
+            </div>
+            <ol className="mt-3 list-decimal space-y-2 pl-5">
+              <li>Open Minecraft → <span className="text-white/80">Multiplayer</span></li>
+              <li>Click <span className="text-white/80">Add Server</span></li>
+              <li>Server Address: <span className="font-bold text-white">{javaAddress}</span>
+                <span className="text-white/40"> (if needed: :{bedrockPort})</span></li>
+              <li>Click <span className="text-white/80">Done</span> → Join</li>
             </ol>
           </div>
 
+          <div className="h-px bg-white/[0.06]" />
+
           <div>
-            <div className="font-semibold text-white">Bedrock (Console / Mobile)</div>
-            <ol className="mt-2 list-decimal space-y-1 pl-5">
-              <li>Open Minecraft → <span className="text-white">Play</span></li>
-              <li>Go to <span className="text-white">Servers</span> → Add Server</li>
-              <li>
-                Address: <span className="text-white font-semibold">{bedrockAddress}</span>
-              </li>
-              <li>
-                Port: <span className="text-white font-semibold">{bedrockPort}</span>
-              </li>
+            <div className="font-bold text-white flex items-center gap-2">
+              <span className="h-6 w-6 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/70">📱</span>
+              Bedrock (Console / Mobile)
+            </div>
+            <ol className="mt-3 list-decimal space-y-2 pl-5">
+              <li>Open Minecraft → <span className="text-white/80">Play</span></li>
+              <li>Go to <span className="text-white/80">Servers</span> → Add Server</li>
+              <li>Address: <span className="font-bold text-white">{bedrockAddress}</span></li>
+              <li>Port: <span className="font-bold text-white">{bedrockPort}</span></li>
               <li>Save → Join</li>
             </ol>
           </div>
+        </div>
 
-          <div className="text-xs text-white/50" dir="rtl">
-            <span className="text-white/70 font-semibold">ملاحظة:</span>{" "}
-            إذا ما ضبطت معاك، جرّب تكتب البورت (25606) مع السيرفر أو ادخل الديسكورد ونساعدك.
-          </div>
+        <div className="mt-5 text-xs text-white/40 glass-card p-3" dir="rtl">
+          <span className="text-white/60 font-semibold">ملاحظة:</span>{" "}
+          إذا ما ضبطت معاك، جرّب تكتب البورت (25606) مع السيرفر أو ادخل الديسكورد ونساعدك.
         </div>
       </div>
     </div>

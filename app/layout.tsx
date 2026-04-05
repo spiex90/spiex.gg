@@ -1,5 +1,7 @@
 import "./globals.css";
 import NavBar from "./components/NavBar";
+import AnimatedBackground from "./components/AnimatedBackground";
+import Particles from "./components/Particles";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -68,11 +70,54 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#0b0b0f] text-white">
+      <body className="min-h-screen bg-[#050508] text-white antialiased">
+        {/* Animated background layers */}
+        <AnimatedBackground />
+        <Particles />
+
+        {/* Nav */}
         <NavBar />
-        <main className="mx-auto max-w-3xl px-5 py-10">{children}</main>
-        <footer className="mx-auto max-w-3xl px-5 pb-10 pt-6 text-center text-xs text-white/40">
-          © {new Date().getFullYear()} SPIEX — spiex.gg
+
+        {/* Main content */}
+        <main className="relative z-10 mx-auto max-w-4xl px-5 py-10 page-enter">
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="relative z-10 mx-auto max-w-4xl px-5 pb-10 pt-6">
+          <div className="divider-glow" />
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <p className="text-xs text-white/30">
+              &copy; {new Date().getFullYear()}{" "}
+              <span className="font-semibold text-white/50">SPIEX</span> — spiex.gg
+            </p>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://live.spiex.gg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/30 hover:text-white/60 transition"
+              >
+                Twitch
+              </a>
+              <a
+                href="https://discord.spiex.gg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/30 hover:text-white/60 transition"
+              >
+                Discord
+              </a>
+              <a
+                href="https://x.com/spiex90"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/30 hover:text-white/60 transition"
+              >
+                Twitter
+              </a>
+            </div>
+          </div>
         </footer>
       </body>
     </html>
