@@ -11,6 +11,7 @@ const STATUSES = ['considering', 'playing', 'current', 'completed', 'dropped'];
 export default function NewGamePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
     genre: '',
@@ -30,6 +31,7 @@ export default function NewGamePage() {
     if (!form.name.trim()) return;
     setSaving(true);
 
+    setError('');
     try {
       const res = await fetch('/api/os/games', {
         method: 'POST',
@@ -46,8 +48,14 @@ export default function NewGamePage() {
         }),
       });
 
-      const game = await res.json();
-      router.push(`/os/games/${game.id}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error ?? `Server error ${res.status}`);
+        return;
+      }
+      router.push(`/os/games/${data.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setSaving(false);
     }
@@ -148,6 +156,12 @@ export default function NewGamePage() {
             />
           </div>
         </div>
+
+        {error && (
+          <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
+            {error}
+          </p>
+        )}
 
         <div className="flex gap-3">
           <Link
