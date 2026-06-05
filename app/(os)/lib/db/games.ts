@@ -13,7 +13,7 @@ export async function listGames(): Promise<Game[]> {
 }
 
 export async function getGame(id: number): Promise<Game | null> {
-  const { data, error } = await sb().from('games').select('*').eq('id', id).single();
+  const { data, error } = await sb().from('os_games').select('*').eq('id', id).single();
   if (error) return null;
   return data as Game;
 }
@@ -29,7 +29,7 @@ export async function getCurrentGame(): Promise<Game | null> {
 }
 
 export async function createGame(input: Partial<Game>): Promise<Game> {
-  const { data, error } = await sb().from('games').insert(input).select().single();
+  const { data, error } = await sb().from('os_games').insert(input).select().single();
   if (error) throw error;
   return data as Game;
 }
@@ -47,12 +47,12 @@ export async function updateGame(id: number, input: Partial<Game>): Promise<Game
 
 export async function setCurrentGame(id: number): Promise<void> {
   // Clear all first
-  await sb().from('games').update({ is_current: false }).neq('id', 0);
+  await sb().from('os_games').update({ is_current: false }).neq('id', 0);
   // Set this one
-  await sb().from('games').update({ is_current: true }).eq('id', id);
+  await sb().from('os_games').update({ is_current: true }).eq('id', id);
 }
 
 export async function deleteGame(id: number): Promise<void> {
-  const { error } = await sb().from('games').delete().eq('id', id);
+  const { error } = await sb().from('os_games').delete().eq('id', id);
   if (error) throw error;
 }
