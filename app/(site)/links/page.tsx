@@ -1,5 +1,5 @@
-import LiveWidget from "../components/LiveWidget";
-import { LINKS, SITE } from "../lib/site";
+import LiveWidget from "@/app/components/LiveWidget";
+import { LINKS, SITE } from "@/app/lib/site";
 import Link from "next/link";
 
 export default function LinksPage() {

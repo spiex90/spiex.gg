@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { SITE } from "./lib/site";
-import StreamCountdown from "./components/StreamCountdown";
-import ScrollReveal from "./components/ScrollReveal";
+import { SITE } from "@/app/lib/site";
+import StreamCountdown from "@/app/components/StreamCountdown";
+import ScrollReveal from "@/app/components/ScrollReveal";
 
 type LiveApiResponse = {
   live: boolean;

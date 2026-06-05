@@ -1,4 +1,4 @@
-import { SITE } from "../lib/site";
+import { SITE } from "@/app/lib/site";
 
 export const metadata = {
   title: "Partners",
