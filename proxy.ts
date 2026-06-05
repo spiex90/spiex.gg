@@ -21,7 +21,9 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
       ['sign'],
     );
     const sigBytes = await crypto.subtle.sign('HMAC', key, enc.encode(ts));
-    const expected = Buffer.from(sigBytes).toString('hex');
+    const expected = Array.from(new Uint8Array(sigBytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     return expected === sig;
   } catch {
     return false;
