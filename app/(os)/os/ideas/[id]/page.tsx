@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getIdea } from '../../../lib/db/ideas';
 import { IdeaScorePanel } from '../../../components/ideas/IdeaScorePanel';
 import { IdeaPackages } from '../../../components/ideas/IdeaPackages';
@@ -36,8 +38,8 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="flex items-center gap-3 mt-1 text-xs text-white/25">
             {idea.game && <span>Game: {idea.game.name}</span>}
-            {idea.platforms.length > 0 && (
-              <span>{idea.platforms.map(p => PLATFORM_LABELS[p]).join(', ')}</span>
+            {(idea.platforms ?? []).length > 0 && (
+              <span>{(idea.platforms ?? []).map(p => PLATFORM_LABELS[p]).join(', ')}</span>
             )}
             <span>{formatDate(idea.created_at)}</span>
           </div>

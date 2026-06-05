@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getDailyMetrics, getUnreadAlerts } from '../../lib/db/metrics';
 import { listIdeas } from '../../lib/db/ideas';
 import { getCurrentGame } from '../../lib/db/games';
@@ -132,7 +134,7 @@ export default async function TodayPage() {
                 >
                   <div>
                     <p className="text-white/70 text-sm font-medium truncate max-w-[180px]">{idea.title}</p>
-                    <p className="text-white/25 text-xs mt-0.5">{idea.platforms.map(p => PLATFORM_LABELS[p]).join(', ')}</p>
+                    <p className="text-white/25 text-xs mt-0.5">{(idea.platforms ?? []).map(p => PLATFORM_LABELS[p]).join(', ')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {idea.growth_score && (

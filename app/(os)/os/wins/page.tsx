@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { sb } from '../../lib/supabase';
 import { Card, CardBody } from '../../components/primitives/Card';
 import { Badge } from '../../components/primitives/Badge';

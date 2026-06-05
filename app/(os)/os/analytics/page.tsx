@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getAllPlatformSnapshots, getGoals, getUnreadAlerts } from '../../lib/db/metrics';
 import { FollowerChart } from '../../components/analytics/FollowerChart';
 import { Card, CardHeader, CardBody } from '../../components/primitives/Card';

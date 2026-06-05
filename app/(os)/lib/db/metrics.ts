@@ -13,8 +13,8 @@ export async function getFollowerSnapshots(
     .from('follower_snapshots')
     .select('*')
     .eq('platform', platform)
-    .gte('date', since.toISOString().split('T')[0])
-    .order('date', { ascending: true });
+    .gte('recorded_date', since.toISOString().split('T')[0])
+    .order('recorded_date', { ascending: true });
   if (error) throw error;
   return (data ?? []) as FollowerSnapshot[];
 }
@@ -26,8 +26,8 @@ export async function getAllPlatformSnapshots(days = 30): Promise<FollowerSnapsh
   const { data, error } = await sb()
     .from('follower_snapshots')
     .select('*')
-    .gte('date', since.toISOString().split('T')[0])
-    .order('date', { ascending: true });
+    .gte('recorded_date', since.toISOString().split('T')[0])
+    .order('recorded_date', { ascending: true });
   if (error) throw error;
   return (data ?? []) as FollowerSnapshot[];
 }
@@ -39,9 +39,9 @@ export async function getDailyMetrics(): Promise<DailyMetrics[]> {
   for (const platform of platforms) {
     const { data } = await sb()
       .from('follower_snapshots')
-      .select('follower_count, date')
+      .select('follower_count, recorded_date')
       .eq('platform', platform)
-      .order('date', { ascending: false })
+      .order('recorded_date', { ascending: false })
       .limit(2);
 
     if (!data || data.length === 0) {
@@ -64,7 +64,7 @@ export async function getGoals(): Promise<Goal[]> {
     .from('goals')
     .select('*')
     .is('completed_at', null)
-    .order('deadline', { ascending: true });
+    .order('deadline', { ascending: true, nullsFirst: false });
   if (error) throw error;
   return (data ?? []) as Goal[];
 }

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getGame } from '../../../lib/db/games';
 import { GameAnalysisPanel } from '../../../components/games/GameAnalysisPanel';
 import { GameSetCurrentButton } from '../../../components/games/GameSetCurrentButton';

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { listIdeas } from '../../lib/db/ideas';
 import { Card, CardBody } from '../../components/primitives/Card';
 import { StatusBadge } from '../../components/primitives/Badge';

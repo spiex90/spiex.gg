@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { listIdeas } from '../../lib/db/ideas';
 import { Card } from '../../components/primitives/Card';
 import { StatusBadge } from '../../components/primitives/Badge';
@@ -49,9 +51,9 @@ export default async function IdeasPage() {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <StatusBadge status={idea.status} />
-                      {idea.platforms.length > 0 && (
+                      {(idea.platforms ?? []).length > 0 && (
                         <span className="text-white/25 text-xs">
-                          {idea.platforms.map(p => PLATFORM_LABELS[p]).join(', ')}
+                          {(idea.platforms ?? []).map(p => PLATFORM_LABELS[p]).join(', ')}
                         </span>
                       )}
                       <span className="text-white/15 text-xs">{formatDate(idea.created_at)}</span>
