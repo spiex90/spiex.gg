@@ -5,14 +5,24 @@ import { listGames, createGame } from '@/app/(os)/lib/db/games';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const games = await listGames();
-  return NextResponse.json(games);
+  try {
+    if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const games = await listGames();
+    return NextResponse.json(games);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const body = await req.json();
-  const game = await createGame(body);
-  return NextResponse.json(game, { status: 201 });
+  try {
+    if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await req.json();
+    const game = await createGame(body);
+    return NextResponse.json(game, { status: 201 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
