@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
     const game = await createGame(body);
     return NextResponse.json(game, { status: 201 });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = err instanceof Error
+      ? err.message
+      : (typeof err === 'object' && err !== null && 'message' in err)
+        ? String((err as { message: unknown }).message)
+        : JSON.stringify(err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
